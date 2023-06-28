@@ -8,6 +8,12 @@ app.use(express.static('public'))
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
+app.post('/api/users', (req, res) => {
+  res.json({newUser:'newUser'})
+});
+app.post('/api/users/:_id/exercises', (req, res) => {
+  res.json({addExer:'addExer'})
+});
 
 
 
