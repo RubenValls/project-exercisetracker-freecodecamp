@@ -50,16 +50,10 @@ const newUser = async (req) => {
 
 const getUsers = async () => {
   const users = db.collection("users");
+  const response = users.find({});
+  const allValues = await response.toArray();
 
-  const response = await users.find();
-
-  console.log(response);
-
-  const userAdded = {
-    test: "test",
-  };
-
-  return userAdded;
+  return allValues;
 };
 
 const newExercise = (req) => {
@@ -76,7 +70,7 @@ app.post("/api/users", (req, res) => {
 });
 app.get("/api/users", (req, res) => {
   getUsers().then((response) => {
-    res.json(response);
+    res.send(response);
   });
 });
 app.post("/api/users/:_id/exercises", (req, res) => {
