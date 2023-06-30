@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
@@ -26,6 +26,38 @@ db.command({
     },
   },
 });
+
+db.command({
+  collMod: "exercises",
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["description", "duration"],
+      properties: {
+        description: {
+          bsonType: "string",
+          minLength: 1,
+          description: "must be a string and is required",
+        },
+        duration: {
+          bsonType: "int",
+          minimum: 1,
+          description: "must be a number and minimum 1.",
+        },
+        date: {
+          bsonType: "string",
+          minLength: 1,
+          description: "must be a string and is required",
+        },
+      },
+    },
+  },
+});
+
+const toDate = (dateStr) => {
+  const [year, month, day] = dateStr.split("-")
+  return new Date(year, month - 1, day)
+}
 
 const newUser = async (req) => {
   const users = db.collection("users");
@@ -56,8 +88,37 @@ const getUsers = async () => {
   return allValues;
 };
 
-const newExercise = (req) => {
-  db ? console.log("Conectado a la BBDD") : console.log("No conectado");
+const newExercise = async (req) => {
+  const exercises = db.collection("exercises");
+  const users = db.collection("users");
+  const formParams = req?.body
+  let response = {};
+
+  try{
+    users.find({ _id: new ObjectId(formParams[':_id'])})
+    console.log({ 
+      id: formParams[':_id'],
+      username: user.toArray(),
+      description: formParams?.description,
+      duration: Number(formParams?.duration),
+      date: formParams?.date ? toDate(formParams?.date).toDateString() : new Date().toDateString()
+    })
+    await exercises.insertOne({ 
+      username: user?.username,
+      description: formParams?.description,
+      duration: Number(formParams?.duration),
+      date: formParams?.date ? toDate(formParams?.date).toDateString() : new Date().toDateString()
+    });
+    
+    response = {
+
+    }
+  }catch(e){
+    console.log(e)
+    userAdded = {
+      error : e
+    };
+  }
 };
 
 app.get("/", (req, res) => {
@@ -74,8 +135,9 @@ app.get("/api/users", (req, res) => {
   });
 });
 app.post("/api/users/:_id/exercises", (req, res) => {
-  newExercise(req);
-  res.json({ addExer: "addExer" });
+  newExercise(req).then((response) => {
+    res.json({ addExer: "addExer" });
+  });
 });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
