@@ -141,7 +141,11 @@ const newExercise = async (req) => {
 
 const logsMiddleware = async (req) => {
   const _id = req?.params?._id;
-  const { from, to, limit } = req.query;
+  let { from, to, limit } = req.query;
+  
+
+  from = from ? toDate(from) : null
+  to = to ? toDate(to) : null
 
   const allUsers = await getUsers();
   const user = allUsers.find((user) => user["_id"].toString() === _id);
@@ -150,8 +154,21 @@ const logsMiddleware = async (req) => {
   const _userExercises = allExercises.filter(
     (exercise) => exercise["username"] === user.username
   );
+  _userExercises.sort((a,b) => {
+    return new Date(a.date) - new Date(b.date);
+  })
 
-  const exercisesFiltered = _userExercises.map((exercise) => {
+  let _userExercisesFiltered = []
+  
+  from && to 
+    ? _userExercisesFiltered = _userExercises.filter((exercice) => new Date(exercice.date) >= new Date(from) && new Date(exercice.date) <= new Date(to))
+    : _userExercisesFiltered = _userExercises;
+
+  limit
+    ? _userExercisesFiltered = _userExercisesFiltered.slice(0, Number(limit))
+    : null
+  
+  _userExercisesFiltered = _userExercisesFiltered.map((exercise) => {
     return {
       description: exercise.description,
       duration: exercise.duration,
@@ -163,7 +180,7 @@ const logsMiddleware = async (req) => {
     _id: _id,
     username: user.username,
     count: _userExercises.length,
-    log: exercisesFiltered,
+    log: _userExercisesFiltered,
   };
 
   return response;
