@@ -88,6 +88,14 @@ const getUsers = async () => {
   return allValues;
 };
 
+const getExercises = async () => {
+  const exercises = db.collection("exercises");
+  const response = exercises.find({});
+  const allValues = await response.toArray();
+
+  return allValues;
+};
+
 const newExercise = async (req) => {
   const exercises = db.collection("exercises");
   const users = db.collection("users");
@@ -121,14 +129,44 @@ const newExercise = async (req) => {
         description: formParams?.description,
       };
 
-      return _response
+      return _response;
     }
   } catch (e) {
     _response = {
       error: e,
     };
-    return _response
+    return _response;
   }
+};
+
+const logsMiddleware = async (req) => {
+  const _id = req?.params?._id;
+  const { from, to, limit } = req.query;
+
+  const allUsers = await getUsers();
+  const user = allUsers.find((user) => user["_id"].toString() === _id);
+
+  const allExercises = await getExercises();
+  const _userExercises = allExercises.filter(
+    (exercise) => exercise["username"] === user.username
+  );
+
+  const exercisesFiltered = _userExercises.map((exercise) => {
+    return {
+      description: exercise.description,
+      duration: exercise.duration,
+      date: exercise.date
+    }
+  })
+
+  const response = {
+    _id: _id,
+    username: user.username,
+    count: _userExercises.length,
+    log: exercisesFiltered,
+  };
+
+  return response;
 };
 
 app.get("/", (req, res) => {
@@ -141,8 +179,13 @@ app.post("/api/users", (req, res) => {
 });
 app.get("/api/users", (req, res) => {
   getUsers().then((response) => {
-    console.log(response)
+    console.log(response);
     res.send(response);
+  });
+});
+app.get("/api/users/:_id/logs", (req, res) => {
+  logsMiddleware(req).then((response) => {
+    res.json(response);
   });
 });
 app.post("/api/users/:_id/exercises", (req, res) => {
