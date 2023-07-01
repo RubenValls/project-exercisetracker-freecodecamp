@@ -196,7 +196,6 @@ app.post("/api/users", (req, res) => {
 });
 app.get("/api/users", (req, res) => {
   getUsers().then((response) => {
-    console.log(response);
     res.send(response);
   });
 });
@@ -207,7 +206,6 @@ app.get("/api/users/:_id/logs", (req, res) => {
 });
 app.post("/api/users/:_id/exercises", (req, res) => {
   newExercise(req).then((response) => {
-    console.log(response);
     res.json(response);
   });
 });
