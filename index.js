@@ -55,25 +55,25 @@ db.command({
 });
 
 const toDate = (dateStr) => {
-  const [year, month, day] = dateStr.split("-")
-  return new Date(year, month - 1, day)
-}
+  const [year, month, day] = dateStr.split("-");
+  return new Date(year, month - 1, day);
+};
 
 const newUser = async (req) => {
   const users = db.collection("users");
   const _user = req?.body?.username;
   let response = {};
-  let userAdded = {}
+  let userAdded = {};
 
-  try{
-    response = await users.insertOne({ username: _user })
+  try {
+    response = await users.insertOne({ username: _user });
     userAdded = {
       username: _user,
       _id: response?.insertedId?.toString(),
     };
-  }catch(e){
+  } catch (e) {
     userAdded = {
-      error : 'Username is required'
+      error: "Username is required",
     };
   }
 
@@ -91,33 +91,43 @@ const getUsers = async () => {
 const newExercise = async (req) => {
   const exercises = db.collection("exercises");
   const users = db.collection("users");
-  const formParams = req?.body
-  let response = {};
+  const formParams = req?.body;
+  let _response = {};
 
-  try{
-    users.find({ _id: new ObjectId(formParams[':_id'])})
-    console.log({ 
-      id: formParams[':_id'],
-      username: user.toArray(),
-      description: formParams?.description,
-      duration: Number(formParams?.duration),
-      date: formParams?.date ? toDate(formParams?.date).toDateString() : new Date().toDateString()
-    })
-    await exercises.insertOne({ 
-      username: user?.username,
-      description: formParams?.description,
-      duration: Number(formParams?.duration),
-      date: formParams?.date ? toDate(formParams?.date).toDateString() : new Date().toDateString()
-    });
-    
-    response = {
+  try {
+    const allUsers = await getUsers();
 
+    const user = allUsers.find(
+      (user) => user["_id"].toString() === formParams[":_id"]
+    );
+
+    if (user) {
+      await exercises.insertOne({
+        username: user?.username,
+        description: formParams?.description,
+        duration: Number(formParams?.duration),
+        date: formParams?.date
+          ? toDate(formParams?.date).toDateString()
+          : new Date().toDateString(),
+      });
+
+      _response = {
+        _id: user["_id"].toString(),
+        username: user?.username,
+        date: formParams?.date
+          ? toDate(formParams?.date).toDateString()
+          : new Date().toDateString(),
+        duration: Number(formParams?.duration),
+        description: formParams?.description,
+      };
+
+      return _response
     }
-  }catch(e){
-    console.log(e)
-    userAdded = {
-      error : e
+  } catch (e) {
+    _response = {
+      error: e,
     };
+    return _response
   }
 };
 
@@ -131,12 +141,14 @@ app.post("/api/users", (req, res) => {
 });
 app.get("/api/users", (req, res) => {
   getUsers().then((response) => {
+    console.log(response)
     res.send(response);
   });
 });
 app.post("/api/users/:_id/exercises", (req, res) => {
   newExercise(req).then((response) => {
-    res.json({ addExer: "addExer" });
+    console.log(response);
+    res.json(response);
   });
 });
 
